@@ -164,18 +164,34 @@
 
   .thumbs-row{
     display:flex;
-    align-items:flex-end;
-    gap:6px;
+    align-items:stretch;
+    gap:8px;
     padding:8px 10px;
     background:#062526;
   }
+  .thumb-col{
+    flex:1 1 0;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .thumb-caption{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--text-dim);
+    text-align:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
   .thumbs-row .thumb{
     position:relative;
-    height:96px;
+    width:100%;
     background:#0a1f20;
+    border:1px solid var(--border);
     border-radius:6px;
     overflow:hidden;
-    flex:0 0 auto;
     cursor:pointer;
   }
   .thumbs-row .thumb.r-9x16{ aspect-ratio:9/16; }
@@ -462,12 +478,15 @@ function renderList(rows){
     const imgBlog  = normalizeImageUrl(r["썸네일_블로그"]);
     const workLink = normalizeDownloadUrl(r["작업파일링크"]);
 
-    const thumbHtml = (url, ratioClass, label) => `
-      <div class="thumb ${ratioClass}" ${url ? `onclick="openLightbox('${url}')"` : ""}>
-        ${url
-          ? `<img src="${url}" alt="${label}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;noimg&quot;>없음</div>'">`
-          : `<div class="noimg">없음</div>`}
-        <span class="ratio-label">${label}</span>
+    const thumbHtml = (url, ratioClass, caption, ratioLabel) => `
+      <div class="thumb-col">
+        <div class="thumb-caption">${caption}</div>
+        <div class="thumb ${ratioClass}" ${url ? `onclick="openLightbox('${url}')"` : ""}>
+          ${url
+            ? `<img src="${url}" alt="${caption}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;noimg&quot;>없음</div>'">`
+            : `<div class="noimg">없음</div>`}
+          <span class="ratio-label">${ratioLabel}</span>
+        </div>
       </div>`;
 
     const card = document.createElement("div");
@@ -480,9 +499,9 @@ function renderList(rows){
           : `<span class="dl-btn disabled">ZIP 없음</span>`}
       </div>
       <div class="thumbs-row">
-        ${thumbHtml(imgInsta, "r-9x16", "인스타사이즈")}
-        ${thumbHtml(imgWide,  "r-16x9", "유튜브사이즈")}
-        ${thumbHtml(imgBlog,  "r-1x1", "블로그사이즈")}
+        ${thumbHtml(imgInsta, "r-9x16", "인스타 사이즈", "9:16")}
+        ${thumbHtml(imgWide,  "r-16x9", "유튜브 사이즈", "16:9")}
+        ${thumbHtml(imgBlog,  "r-1x1", "블로그 사이즈", "1:1")}
       </div>
       <div class="body">
         <div class="meta-line">
