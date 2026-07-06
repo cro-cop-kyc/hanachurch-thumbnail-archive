@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>동탄하나교회 · 썸네일 아카이브</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#0b3335;
+    --bg2:#0a2c2e;
+    --surface:#123f41;
+    --surface-hover:#164a4d;
+    --border:rgba(255,255,255,0.08);
+    --text:#eef7f6;
+    --text-dim:#9dc4c2;
+    --accent:#f2e04d;
+    --accent-teal:#2a8f8a;
+    --ok:#6fcf97;
+    --wip:#f2c94c;
+    --todo:#8a9ba0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+    background:linear-gradient(180deg,var(--bg) 0%, var(--bg2) 100%);
+    color:var(--text);
+    min-height:100vh;
+    padding-bottom:40px;
+  }
+
+  header{
+    padding:28px 20px 20px;
+    text-align:center;
+    border-bottom:1px solid var(--border);
+  }
+  header .eyebrow{
+    font-size:12px;
+    letter-spacing:0.14em;
+    color:var(--text-dim);
+    text-transform:uppercase;
+  }
+  header h1{
+    margin:8px 0 0;
+    font-size:22px;
+    font-weight:800;
+    position:relative;
+    display:inline-block;
+  }
+  header h1 .hl{
+    position:relative;
+    z-index:1;
+  }
+  header h1 .hl::before{
+    content:"";
+    position:absolute;
+    left:-4px; right:-4px; bottom:2px; height:38%;
+    background:var(--accent);
+    z-index:-1;
+    transform:skewX(-6deg) rotate(-0.6deg);
+    opacity:0.85;
+  }
+  header h1 .hl{ color:#12211f; }
+
+  .toolbar{
+    max-width:720px;
+    margin:20px auto 0;
+    padding:0 16px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .search-row{
+    display:flex;
+    gap:8px;
+  }
+  input[type="text"], select{
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:10px;
+    padding:11px 14px;
+    font-size:14px;
+    outline:none;
+  }
+  input[type="text"]{ flex:1; }
+  input[type="text"]::placeholder{ color:var(--text-dim); }
+  input[type="text"]:focus, select:focus{ border-color:var(--accent-teal); }
+  .filter-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .filter-row select{ flex:1; min-width:110px; }
+
+  .count-bar{
+    max-width:720px;
+    margin:14px auto 0;
+    padding:0 16px;
+    font-size:13px;
+    color:var(--text-dim);
+    display:flex;
+    justify-content:space-between;
+  }
+
+  .list{
+    max-width:720px;
+    margin:16px auto 0;
+    padding:0 16px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    display:flex;
+    gap:0;
+    transition:background 0.15s ease;
+  }
+  .card:hover{ background:var(--surface-hover); }
+
+  .card .no{
+    flex:0 0 34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:700;
+    color:var(--text-dim);
+    background:rgba(0,0,0,0.15);
+    writing-mode:vertical-rl;
+    letter-spacing:0.05em;
+  }
+
+  .card .thumb-wrap{
+    flex:0 0 118px;
+    position:relative;
+    background:#062526;
+  }
+  .card .thumb-wrap img{
+    width:118px;
+    height:100%;
+    min-height:96px;
+    object-fit:cover;
+    display:block;
+  }
+  .card .thumb-wrap .noimg{
+    width:118px;
+    min-height:96px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--text-dim);
+    font-size:11px;
+    text-align:center;
+    padding:6px;
+  }
+
+  .card .body{
+    flex:1;
+    padding:10px 12px;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .card .meta-line{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:11px;
+    color:var(--text-dim);
+    flex-wrap:wrap;
+  }
+  .tag{
+    background:rgba(255,255,255,0.08);
+    padding:2px 7px;
+    border-radius:99px;
+    font-size:11px;
+    white-space:nowrap;
+  }
+  .status{
+    padding:2px 8px;
+    border-radius:99px;
+    font-size:11px;
+    font-weight:700;
+    color:#0b2323;
+    white-space:nowrap;
+  }
+  .status.done{ background:var(--ok); }
+  .status.wip{ background:var(--wip); }
+  .status.todo{ background:var(--todo); color:#fff; }
+
+  .card .title{
+    font-size:14.5px;
+    font-weight:700;
+    line-height:1.35;
+    word-break:keep-all;
+  }
+
+  .card .links{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:2px;
+  }
+  .card .links a{
+    font-size:11px;
+    color:var(--accent);
+    text-decoration:none;
+    background:rgba(242,224,77,0.1);
+    padding:3px 8px;
+    border-radius:8px;
+    border:1px solid rgba(242,224,77,0.25);
+  }
+  .card .links a:hover{ text-decoration:underline; }
+
+  .card .version{
+    font-size:10.5px;
+    color:var(--text-dim);
+    margin-top:2px;
+  }
+
+  .empty, .error{
+    max-width:720px;
+    margin:40px auto;
+    padding:24px;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:13px;
+    line-height:1.6;
+  }
+  .error code{
+    display:block;
+    margin-top:10px;
+    background:rgba(0,0,0,0.25);
+    padding:10px;
+    border-radius:8px;
+    font-size:11px;
+    color:var(--accent);
+    word-break:break-all;
+  }
+
+  @media (min-width:560px){
+    .filter-row select{ flex:0 0 auto; min-width:140px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">동탄하나교회 · 콘텐츠팀</div>
+  <h1><span class="hl">썸네일 아카이브</span></h1>
+</header>
+
+<div class="toolbar">
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="제목으로 검색...">
+  </div>
+  <div class="filter-row">
+    <select id="filterType"><option value="">전체 폼 종류</option></select>
+    <select id="filterStatus"><option value="">전체 제작여부</option></select>
+  </div>
+</div>
+
+<div class="count-bar">
+  <span id="countText">불러오는 중...</span>
+  <span id="sourceText"></span>
+</div>
+
+<div class="list" id="list"></div>
+
+<script>
+/* ============================================
+   설정: 구글시트를 "웹에 게시(CSV)"한 URL을 여기에 붙여넣으세요.
+   파일 > 공유 > 웹에 게시 > 시트 선택 > 쉼표로 구분된 값(.csv) > 게시
+   ============================================ */
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjSJ3Of6V82_BFanugtMzXGxPJ_2KyGjKy8FxC_y8HhhmWsDpCpsG4vaCCAOtIi4lKc6Iq3g5jEde/pub?gid=0&single=true&output=csv"; // 예: "https://docs.google.com/spreadsheets/d/e/2PACX-xxxx/pub?output=csv"
+
+/* CSV_URL이 비어있을 때 보여줄 샘플 데이터 (첨부하신 표 기준) */
+const SAMPLE_DATA = [
+  {
+    "순번":"136", "생성날짜":"2026-06-27", "폼종류":"설교숏폼",
+    "제목":"복음은 이 땅에서부터 누릴 수 있는 것이다",
+    "썸네일이미지":"",
+    "유튜브링크":"https://youtube.com/shorts/035PcKm5LPY",
+    "네이버링크":"https://naver.me/Fc6YJDIP",
+    "인스타링크":"https://www.instagram.com/reel/DaFEyLmpg4h",
+    "제작여부":"제작완료", "버전":"v1"
+  },
+  {
+    "순번":"137", "생성날짜":"2026-06-28", "폼종류":"설교숏폼",
+    "제목":"듣기 좋아하지만 삶에 적용하기 싫어하는 '은혜'",
+    "썸네일이미지":"",
+    "유튜브링크":"https://youtube.com/shorts/2q8JC2hdwsl",
+    "네이버링크":"https://naver.me/Ge7IECcn",
+    "인스타링크":"https://www.instagram.com/reel/DaIWVcppv0c",
+    "제작여부":"제작완료", "버전":"v1"
+  },
+  {
+    "순번":"138", "생성날짜":"2026-06-29", "폼종류":"설교숏폼",
+    "제목":"성경은 윤리 도덕책이 아니다",
+    "썸네일이미지":"",
+    "유튜브링크":"https://youtube.com/shorts/ew8TGNyRP-k",
+    "네이버링크":"https://naver.me/Gbv25Qrm",
+    "인스타링크":"https://www.instagram.com/reel/DaKonW-J6F8",
+    "제작여부":"제작완료", "버전":"v1"
+  }
+];
+
+let ALL_ROWS = [];
+
+function statusClass(v){
+  if(!v) return "todo";
+  if(v.includes("완료")) return "done";
+  if(v.includes("진행")) return "wip";
+  return "todo";
+}
+
+/* 구글드라이브 공유 링크 -> 이미지 직접표시 URL로 변환 */
+function normalizeImageUrl(url){
+  if(!url) return "";
+  const m = url.match(/[-\w]{25,}/); // drive file id 패턴 추출
+  if(url.includes("drive.google.com") && m){
+    return `https://drive.google.com/thumbnail?id=${m[0]}&sz=w400`;
+  }
+  return url;
+}
+
+function renderFilters(rows){
+  const typeSel = document.getElementById("filterType");
+  const statusSel = document.getElementById("filterStatus");
+  const types = [...new Set(rows.map(r=>r["폼종류"]).filter(Boolean))];
+  const statuses = [...new Set(rows.map(r=>r["제작여부"]).filter(Boolean))];
+  types.forEach(t=>{
+    const o=document.createElement("option"); o.value=t; o.textContent=t;
+    typeSel.appendChild(o);
+  });
+  statuses.forEach(s=>{
+    const o=document.createElement("option"); o.value=s; o.textContent=s;
+    statusSel.appendChild(o);
+  });
+}
+
+function renderList(rows){
+  const list = document.getElementById("list");
+  const countText = document.getElementById("countText");
+  list.innerHTML = "";
+  countText.textContent = `총 ${rows.length}개`;
+
+  if(rows.length === 0){
+    list.innerHTML = `<div class="empty">조건에 맞는 항목이 없습니다.</div>`;
+    return;
+  }
+
+  rows.forEach(r=>{
+    const img = normalizeImageUrl(r["썸네일이미지"]);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="no">#${r["순번"]||""}</div>
+      <div class="thumb-wrap">
+        ${img
+          ? `<img src="${img}" alt="thumbnail" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;noimg&quot;>이미지 없음</div>'">`
+          : `<div class="noimg">이미지 없음</div>`}
+      </div>
+      <div class="body">
+        <div class="meta-line">
+          <span class="tag">${r["생성날짜"]||""}</span>
+          <span class="tag">${r["폼종류"]||""}</span>
+          <span class="status ${statusClass(r["제작여부"])}">${r["제작여부"]||"미착수"}</span>
+        </div>
+        <div class="title">${r["제목"]||"(제목 없음)"}</div>
+        <div class="links">
+          ${r["유튜브링크"] ? `<a href="${r["유튜브링크"]}" target="_blank" rel="noopener">YouTube</a>` : ""}
+          ${r["네이버링크"] ? `<a href="${r["네이버링크"]}" target="_blank" rel="noopener">Naver</a>` : ""}
+          ${r["인스타링크"] ? `<a href="${r["인스타링크"]}" target="_blank" rel="noopener">Instagram</a>` : ""}
+        </div>
+        ${r["버전"] ? `<div class="version">버전: ${r["버전"]}</div>` : ""}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function applyFilters(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const type = document.getElementById("filterType").value;
+  const status = document.getElementById("filterStatus").value;
+
+  let rows = ALL_ROWS.filter(r=>{
+    const matchQ = !q || (r["제목"]||"").toLowerCase().includes(q);
+    const matchType = !type || r["폼종류"] === type;
+    const matchStatus = !status || r["제작여부"] === status;
+    return matchQ && matchType && matchStatus;
+  });
+
+  // 순번 내림차순 (최신 먼저)
+  rows.sort((a,b)=> (parseInt(b["순번"])||0) - (parseInt(a["순번"])||0));
+  renderList(rows);
+}
+
+function init(rows, sourceLabel){
+  ALL_ROWS = rows;
+  renderFilters(rows);
+  applyFilters();
+  document.getElementById("sourceText").textContent = sourceLabel;
+  document.getElementById("searchInput").addEventListener("input", applyFilters);
+  document.getElementById("filterType").addEventListener("change", applyFilters);
+  document.getElementById("filterStatus").addEventListener("change", applyFilters);
+}
+
+if(CSV_URL){
+  Papa.parse(CSV_URL, {
+    download:true,
+    header:true,
+    skipEmptyLines:true,
+    complete: (res)=> init(res.data, "구글시트 연동됨"),
+    error: (err)=>{
+      document.getElementById("list").innerHTML =
+        `<div class="error">구글시트를 불러오지 못했습니다.<br>CSV_URL이 올바른지, "웹에 게시"가 되어있는지 확인해주세요.<code>${err.message||err}</code></div>`;
+      document.getElementById("countText").textContent = "오류";
+    }
+  });
+} else {
+  init(SAMPLE_DATA, "샘플 데이터 (CSV_URL 미설정)");
+}
+</script>
+
+</body>
+</html>
