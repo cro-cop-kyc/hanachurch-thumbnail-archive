@@ -165,9 +165,9 @@
   .thumbs-row{
     display:flex;
     align-items:stretch;
-    gap:8px;
-    padding:8px 10px;
-    background:#062526;
+    gap:2px;
+    padding:0;
+    background:var(--border);
   }
   .thumb-col{
     flex:1 1 0;
@@ -184,14 +184,13 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+    padding:8px 4px 0;
   }
   .thumbs-row .thumb{
     position:relative;
     width:100%;
-    height:130px;
+    height:150px;
     background:#0a1f20;
-    border:1px solid var(--border);
-    border-radius:6px;
     overflow:hidden;
     cursor:pointer;
   }
@@ -362,6 +361,16 @@
   <div class="filter-row">
     <select id="filterType">
       <option value="" selected disabled hidden>폼 종류를 선택해주세요</option>
+      <option value="설교롱폼">설교롱폼</option>
+      <option value="설교롱폼(영어)">설교롱폼(영어)</option>
+      <option value="글숏폼">글숏폼</option>
+      <option value="간증롱폼">간증롱폼</option>
+      <option value="간증롱폼(영어)">간증롱폼(영어)</option>
+      <option value="간증롱폼(일본)">간증롱폼(일본)</option>
+      <option value="간증숏폼">간증숏폼</option>
+      <option value="말씀의검">말씀의검</option>
+      <option value="하늘양식(사랑의편지)">하늘양식(사랑의편지)</option>
+      <option value="팟캐스트(복음을풀다)">팟캐스트(복음을풀다)</option>
     </select>
     <select id="filterStatus"><option value="">전체 제작여부</option></select>
   </div>
@@ -384,7 +393,7 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjSJ3Of6V82_B
 /* CSV_URL이 비어있을 때 보여줄 샘플 데이터 (첨부하신 표 기준) */
 const SAMPLE_DATA = [
   {
-    "순번":"136", "최초업로드날짜":"2026-06-27", "폼종류":"설교숏폼",
+    "순번":"136", "최초업로드날짜":"2026-06-27", "폼종류":"설교롱폼",
     "제목":"복음은 이 땅에서부터 누릴 수 있는 것이다",
     "썸네일_인스타":"", "썸네일_가로":"", "썸네일_블로그":"",
     "유튜브링크":"https://youtube.com/shorts/035PcKm5LPY",
@@ -394,7 +403,7 @@ const SAMPLE_DATA = [
     "작업파일링크":""
   },
   {
-    "순번":"137", "최초업로드날짜":"2026-06-28", "폼종류":"설교숏폼",
+    "순번":"137", "최초업로드날짜":"2026-06-28", "폼종류":"설교롱폼",
     "제목":"듣기 좋아하지만 삶에 적용하기 싫어하는 '은혜'",
     "썸네일_인스타":"", "썸네일_가로":"", "썸네일_블로그":"",
     "유튜브링크":"https://youtube.com/shorts/2q8JC2hdwsl",
@@ -404,7 +413,7 @@ const SAMPLE_DATA = [
     "작업파일링크":""
   },
   {
-    "순번":"138", "최초업로드날짜":"2026-06-29", "폼종류":"설교숏폼",
+    "순번":"138", "최초업로드날짜":"2026-06-29", "폼종류":"설교롱폼",
     "제목":"성경은 윤리 도덕책이 아니다",
     "썸네일_인스타":"", "썸네일_가로":"", "썸네일_블로그":"",
     "유튜브링크":"https://youtube.com/shorts/ew8TGNyRP-k",
@@ -456,20 +465,8 @@ function closeLightbox(){
 }
 
 function renderFilters(rows){
-  const typeSel = document.getElementById("filterType");
   const statusSel = document.getElementById("filterStatus");
-  const types = [...new Set(rows.map(r=>r["폼종류"]).filter(Boolean))];
   const statuses = [...new Set(rows.map(r=>r["제작여부"]).filter(Boolean))];
-
-  const allOpt = document.createElement("option");
-  allOpt.value = "__ALL__";
-  allOpt.textContent = "전체 폼 종류";
-  typeSel.appendChild(allOpt);
-
-  types.forEach(t=>{
-    const o=document.createElement("option"); o.value=t; o.textContent=t;
-    typeSel.appendChild(o);
-  });
   statuses.forEach(s=>{
     const o=document.createElement("option"); o.value=s; o.textContent=s;
     statusSel.appendChild(o);
@@ -555,7 +552,7 @@ function applyFilters(){
 
   let rows = ALL_ROWS.filter(r=>{
     const matchQ = !q || (r["제목"]||"").toLowerCase().includes(q);
-    const matchType = (type === "__ALL__") || r["폼종류"] === type;
+    const matchType = r["폼종류"] === type;
     const matchStatus = !status || r["제작여부"] === status;
     return matchQ && matchType && matchStatus;
   });
