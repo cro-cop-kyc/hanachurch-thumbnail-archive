@@ -35,14 +35,21 @@
     text-align:center;
     border-bottom:1px solid var(--border);
   }
+  header .church-logo{
+    height:30px;
+    width:auto;
+    display:block;
+    margin:0 auto;
+  }
   header .eyebrow{
+    margin-top:10px;
     font-size:12px;
     letter-spacing:0.14em;
     color:var(--text-dim);
     text-transform:uppercase;
   }
   header h1{
-    margin:8px 0 0;
+    margin:14px 0 0;
     font-size:22px;
     font-weight:800;
     position:relative;
@@ -51,17 +58,17 @@
   header h1 .hl{
     position:relative;
     z-index:1;
+    color:var(--text);
   }
   header h1 .hl::before{
     content:"";
     position:absolute;
-    left:-4px; right:-4px; bottom:2px; height:38%;
+    left:-4px; right:-4px; bottom:-3px; height:24%;
     background:var(--accent);
     z-index:-1;
     transform:skewX(-6deg) rotate(-0.6deg);
-    opacity:0.85;
+    opacity:0.9;
   }
-  header h1 .hl{ color:#12211f; }
 
   .toolbar{
     max-width:720px;
@@ -125,7 +132,7 @@
   .card:hover{ background:var(--surface-hover); }
 
   .card .no{
-    flex:0 0 34px;
+    flex:0 0 40px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -133,8 +140,7 @@
     font-weight:700;
     color:var(--text-dim);
     background:rgba(0,0,0,0.15);
-    writing-mode:vertical-rl;
-    letter-spacing:0.05em;
+    writing-mode:horizontal-tb;
   }
 
   .card .thumb-wrap{
@@ -254,7 +260,8 @@
 <body>
 
 <header>
-  <div class="eyebrow">동탄하나교회 · 콘텐츠팀</div>
+  <img class="church-logo" alt="동탄하나교회" src="data:image/png;base64,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">
+  <div class="eyebrow">디자인팀</div>
   <h1><span class="hl">썸네일 아카이브</span></h1>
 </header>
 
@@ -280,7 +287,7 @@
    설정: 구글시트를 "웹에 게시(CSV)"한 URL을 여기에 붙여넣으세요.
    파일 > 공유 > 웹에 게시 > 시트 선택 > 쉼표로 구분된 값(.csv) > 게시
    ============================================ */
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjSJ3Of6V82_BFanugtMzXGxPJ_2KyGjKy8FxC_y8HhhmWsDpCpsG4vaCCAOtIi4lKc6Iq3g5jEde/pub?gid=0&single=true&output=csv"; // 예: "https://docs.google.com/spreadsheets/d/e/2PACX-xxxx/pub?output=csv"
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjSJ3Of6V82_BFanugtMzXGxPJ_2KyGjKy8FxC_y8HhhmWsDpCpsG4vaCCAOtIi4lKc6Iq3g5jEde/pub?gid=0&single=true&output=csv"; // 구글시트 연동됨
 
 /* CSV_URL이 비어있을 때 보여줄 샘플 데이터 (첨부하신 표 기준) */
 const SAMPLE_DATA = [
