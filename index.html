@@ -363,6 +363,7 @@
       <option value="" selected disabled hidden>폼 종류를 선택해주세요</option>
       <option value="설교롱폼">설교롱폼</option>
       <option value="설교롱폼(영어)">설교롱폼(영어)</option>
+      <option value="설교숏폼">설교숏폼</option>
       <option value="글숏폼">글숏폼</option>
       <option value="간증롱폼">간증롱폼</option>
       <option value="간증롱폼(영어)">간증롱폼(영어)</option>
@@ -384,16 +385,36 @@
 <div class="list" id="list"></div>
 
 <script>
-/* ============================================
-   설정: 구글시트를 "웹에 게시(CSV)"한 URL을 여기에 붙여넣으세요.
-   파일 > 공유 > 웹에 게시 > 시트 선택 > 쉼표로 구분된 값(.csv) > 게시
-   ============================================ */
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjSJ3Of6V82_BFanugtMzXGxPJ_2KyGjKy8FxC_y8HhhmWsDpCpsG4vaCCAOtIi4lKc6Iq3g5jEde/pub?gid=0&single=true&output=csv"; // 구글시트 연동됨
+/* ============================================================
+   설정: 폼 종류마다 구글시트 "탭"이 따로 있고, 그 탭을 각각
+   "웹에 게시(CSV)"해서 나온 주소를 아래에 하나씩 채워 넣으세요.
 
-/* CSV_URL이 비어있을 때 보여줄 샘플 데이터 (첨부하신 표 기준) */
+   시트 만드는 법 (탭 하나당 반복):
+   1) 구글시트에서 해당 폼종류 이름으로 탭 생성
+   2) 파일 > 공유 > 웹에 게시 > 시트 선택(그 탭) > 쉼표로 구분된 값(.csv) > 게시
+   3) 나온 URL을 아래 같은 이름의 " " 안에 붙여넣기
+
+   URL을 비워두면(""), 그 폼종류를 선택했을 때 샘플 데이터로
+   미리보기가 뜹니다 (시트 연결 전 테스트용).
+   ============================================================ */
+const SHEET_URLS = {
+  "설교롱폼":            "",
+  "설교롱폼(영어)":       "",
+  "설교숏폼":            "https://docs.google.com/spreadsheets/d/e/2PACX-1vSEjSJ3Of6V82_BFanugtMzXGxPJ_2KyGjKy8FxC_y8HhhmWsDpCpsG4vaCCAOtIi4lKc6Iq3g5jEde/pub?gid=0&single=true&output=csv",
+  "글숏폼":              "",
+  "간증롱폼":            "",
+  "간증롱폼(영어)":       "",
+  "간증롱폼(일본)":       "",
+  "간증숏폼":            "",
+  "말씀의검":            "",
+  "하늘양식(사랑의편지)":  "",
+  "팟캐스트(복음을풀다)": ""
+};
+
+/* 시트 URL이 비어있는 폼종류를 선택했을 때 보여줄 샘플 데이터 (미리보기용) */
 const SAMPLE_DATA = [
   {
-    "순번":"136", "최초업로드날짜":"2026-06-27", "폼종류":"설교롱폼",
+    "순번":"136", "최초업로드날짜":"2026-06-27", "폼종류":"(샘플)",
     "제목":"복음은 이 땅에서부터 누릴 수 있는 것이다",
     "썸네일_인스타":"", "썸네일_가로":"", "썸네일_블로그":"",
     "유튜브링크":"https://youtube.com/shorts/035PcKm5LPY",
@@ -403,7 +424,7 @@ const SAMPLE_DATA = [
     "작업파일링크":""
   },
   {
-    "순번":"137", "최초업로드날짜":"2026-06-28", "폼종류":"설교롱폼",
+    "순번":"137", "최초업로드날짜":"2026-06-28", "폼종류":"(샘플)",
     "제목":"듣기 좋아하지만 삶에 적용하기 싫어하는 '은혜'",
     "썸네일_인스타":"", "썸네일_가로":"", "썸네일_블로그":"",
     "유튜브링크":"https://youtube.com/shorts/2q8JC2hdwsl",
@@ -413,7 +434,7 @@ const SAMPLE_DATA = [
     "작업파일링크":""
   },
   {
-    "순번":"138", "최초업로드날짜":"2026-06-29", "폼종류":"설교롱폼",
+    "순번":"138", "최초업로드날짜":"2026-06-29", "폼종류":"(샘플)",
     "제목":"성경은 윤리 도덕책이 아니다",
     "썸네일_인스타":"", "썸네일_가로":"", "썸네일_블로그":"",
     "유튜브링크":"https://youtube.com/shorts/ew8TGNyRP-k",
@@ -464,8 +485,10 @@ function closeLightbox(){
   document.getElementById("lightboxImg").src = "";
 }
 
-function renderFilters(rows){
+/* 제작여부 필터 옵션을 현재 불러온 데이터 기준으로 다시 그림 */
+function renderStatusOptions(rows){
   const statusSel = document.getElementById("filterStatus");
+  statusSel.innerHTML = `<option value="">전체 제작여부</option>`;
   const statuses = [...new Set(rows.map(r=>r["제작여부"]).filter(Boolean))];
   statuses.forEach(s=>{
     const o=document.createElement("option"); o.value=s; o.textContent=s;
@@ -535,61 +558,70 @@ function renderList(rows){
   });
 }
 
-let typeSelected = false;
-
 function renderPrompt(){
   const list = document.getElementById("list");
   list.innerHTML = `<div class="empty">☝️ 위에서 폼 종류를 선택해주세요.</div>`;
   document.getElementById("countText").textContent = "대기 중";
 }
 
-function applyFilters(){
-  if(!typeSelected){ renderPrompt(); return; }
+function renderLoading(){
+  const list = document.getElementById("list");
+  list.innerHTML = `<div class="empty">불러오는 중...</div>`;
+  document.getElementById("countText").textContent = "";
+}
 
+/* 검색어 / 제작여부만 로컬 필터링 (폼종류는 이미 해당 시트만 불러왔으므로 다시 거를 필요 없음) */
+function applyLocalFilters(){
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
-  const type = document.getElementById("filterType").value;
   const status = document.getElementById("filterStatus").value;
 
   let rows = ALL_ROWS.filter(r=>{
     const matchQ = !q || (r["제목"]||"").toLowerCase().includes(q);
-    const matchType = r["폼종류"] === type;
     const matchStatus = !status || r["제작여부"] === status;
-    return matchQ && matchType && matchStatus;
+    return matchQ && matchStatus;
   });
 
-  // 순번 내림차순 (최신 먼저)
   rows.sort((a,b)=> (parseInt(b["순번"])||0) - (parseInt(a["순번"])||0));
   renderList(rows);
 }
 
-function init(rows, sourceLabel){
-  ALL_ROWS = rows;
-  renderFilters(rows);
-  renderPrompt();
-  document.getElementById("sourceText").textContent = sourceLabel;
-  document.getElementById("searchInput").addEventListener("input", applyFilters);
-  document.getElementById("filterType").addEventListener("change", ()=>{
-    typeSelected = true;
-    applyFilters();
-  });
-  document.getElementById("filterStatus").addEventListener("change", applyFilters);
-}
+/* 폼종류 선택 시 호출: 해당 폼종류에 연결된 시트를 불러옴 */
+function loadForType(type){
+  const url = SHEET_URLS[type];
+  renderLoading();
 
-if(CSV_URL){
-  Papa.parse(CSV_URL, {
+  if(!url){
+    ALL_ROWS = SAMPLE_DATA;
+    document.getElementById("sourceText").textContent = "샘플 데이터 (이 폼종류는 시트 미연결)";
+    renderStatusOptions(ALL_ROWS);
+    applyLocalFilters();
+    return;
+  }
+
+  Papa.parse(url, {
     download:true,
     header:true,
     skipEmptyLines:true,
-    complete: (res)=> init(res.data, "구글시트 연동됨"),
+    complete: (res)=>{
+      ALL_ROWS = res.data;
+      document.getElementById("sourceText").textContent = "구글시트 연동됨 · " + type;
+      renderStatusOptions(ALL_ROWS);
+      applyLocalFilters();
+    },
     error: (err)=>{
       document.getElementById("list").innerHTML =
-        `<div class="error">구글시트를 불러오지 못했습니다.<br>CSV_URL이 올바른지, "웹에 게시"가 되어있는지 확인해주세요.<code>${err.message||err}</code></div>`;
+        `<div class="error">"${type}" 시트를 불러오지 못했습니다.<br>URL이 올바른지, "웹에 게시"가 되어있는지 확인해주세요.<code>${err.message||err}</code></div>`;
       document.getElementById("countText").textContent = "오류";
     }
   });
-} else {
-  init(SAMPLE_DATA, "샘플 데이터 (CSV_URL 미설정)");
 }
+
+renderPrompt();
+document.getElementById("searchInput").addEventListener("input", applyLocalFilters);
+document.getElementById("filterStatus").addEventListener("change", applyLocalFilters);
+document.getElementById("filterType").addEventListener("change", (e)=>{
+  loadForType(e.target.value);
+});
 </script>
 
 </body>
