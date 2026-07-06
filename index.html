@@ -144,10 +144,7 @@
     color:var(--text-dim);
   }
 
-  .dl-toggle{ position:relative; }
-  .dl-toggle summary{
-    list-style:none;
-    cursor:pointer;
+  .dl-btn{
     font-size:11px;
     font-weight:600;
     color:var(--accent);
@@ -156,36 +153,13 @@
     padding:4px 9px;
     border-radius:8px;
     white-space:nowrap;
-  }
-  .dl-toggle summary::-webkit-details-marker{ display:none; }
-  .dl-toggle summary::after{ content:" ▾"; }
-  .dl-toggle[open] summary::after{ content:" ▴"; }
-  .dl-toggle .dl-panel{
-    position:absolute;
-    right:0;
-    top:calc(100% + 6px);
-    z-index:5;
-    background:var(--bg2);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:8px;
-    min-width:170px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.35);
-  }
-  .dl-panel a{
-    display:block;
-    font-size:12px;
-    color:var(--text);
     text-decoration:none;
-    padding:6px 8px;
-    border-radius:6px;
-    background:rgba(255,255,255,0.06);
   }
-  .dl-panel a:hover{ background:rgba(255,255,255,0.12); }
-  .dl-panel .none{
-    font-size:11px;
+  .dl-btn:hover{ background:rgba(242,224,77,0.2); }
+  .dl-btn.disabled{
     color:var(--text-dim);
-    padding:4px 8px;
+    background:rgba(255,255,255,0.05);
+    border-color:var(--border);
   }
 
   .thumbs-row{
@@ -202,6 +176,7 @@
     border-radius:6px;
     overflow:hidden;
     flex:0 0 auto;
+    cursor:pointer;
   }
   .thumbs-row .thumb.r-9x16{ aspect-ratio:9/16; }
   .thumbs-row .thumb.r-16x9{ aspect-ratio:16/9; }
@@ -323,9 +298,33 @@
   @media (min-width:560px){
     .filter-row select{ flex:0 0 auto; min-width:140px; }
   }
+
+  .lightbox{
+    position:fixed;
+    inset:0;
+    background:rgba(3,15,16,0.92);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    z-index:200;
+    cursor:zoom-out;
+  }
+  .lightbox.open{ display:flex; }
+  .lightbox img{
+    max-width:100%;
+    max-height:100%;
+    border-radius:10px;
+    box-shadow:0 10px 40px rgba(0,0,0,0.5);
+  }
 </style>
 </head>
 <body>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="확대 이미지">
+</div>
+
 
 <header>
   <img class="church-logo" alt="동탄하나교회" src="data:image/png;base64,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">
@@ -410,6 +409,27 @@ function normalizeImageUrl(url){
   return url;
 }
 
+/* 구글드라이브 공유 링크 -> zip 등 파일 직접 다운로드 URL로 변환 */
+function normalizeDownloadUrl(url){
+  if(!url) return "";
+  const m = url.match(/[-\w]{25,}/);
+  if(url.includes("drive.google.com") && m){
+    return `https://drive.google.com/uc?export=download&id=${m[0]}`;
+  }
+  return url;
+}
+
+/* 라이트박스: 썸네일 클릭 시 확대 */
+function openLightbox(url){
+  if(!url) return;
+  document.getElementById("lightboxImg").src = url;
+  document.getElementById("lightbox").classList.add("open");
+}
+function closeLightbox(){
+  document.getElementById("lightbox").classList.remove("open");
+  document.getElementById("lightboxImg").src = "";
+}
+
 function renderFilters(rows){
   const typeSel = document.getElementById("filterType");
   const statusSel = document.getElementById("filterStatus");
@@ -440,10 +460,10 @@ function renderList(rows){
     const imgInsta = normalizeImageUrl(r["썸네일_인스타"]);
     const imgWide  = normalizeImageUrl(r["썸네일_가로"]);
     const imgBlog  = normalizeImageUrl(r["썸네일_블로그"]);
-    const workLink = r["작업파일링크"];
+    const workLink = normalizeDownloadUrl(r["작업파일링크"]);
 
     const thumbHtml = (url, ratioClass, label) => `
-      <div class="thumb ${ratioClass}">
+      <div class="thumb ${ratioClass}" ${url ? `onclick="openLightbox('${url}')"` : ""}>
         ${url
           ? `<img src="${url}" alt="${label}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=&quot;noimg&quot;>없음</div>'">`
           : `<div class="noimg">없음</div>`}
@@ -455,19 +475,14 @@ function renderList(rows){
     card.innerHTML = `
       <div class="card-top">
         <span class="no">#${r["순번"]||""}</span>
-        <details class="dl-toggle">
-          <summary>작업파일 다운로드</summary>
-          <div class="dl-panel">
-            ${workLink
-              ? `<a href="${workLink}" target="_blank" rel="noopener">원본 파일함 열기 →</a>`
-              : `<span class="none">등록된 원본 파일이 없습니다</span>`}
-          </div>
-        </details>
+        ${workLink
+          ? `<a class="dl-btn" href="${workLink}" download rel="noopener">ZIP 다운로드</a>`
+          : `<span class="dl-btn disabled">ZIP 없음</span>`}
       </div>
       <div class="thumbs-row">
-        ${thumbHtml(imgInsta, "r-9x16", "9:16")}
-        ${thumbHtml(imgWide,  "r-16x9", "16:9")}
-        ${thumbHtml(imgBlog,  "r-1x1", "1:1")}
+        ${thumbHtml(imgInsta, "r-9x16", "인스타사이즈")}
+        ${thumbHtml(imgWide,  "r-16x9", "유튜브사이즈")}
+        ${thumbHtml(imgBlog,  "r-1x1", "블로그사이즈")}
       </div>
       <div class="body">
         <div class="meta-line">
