@@ -456,7 +456,7 @@ function closeLightbox(){
 /* 제작여부 필터 옵션을 현재 불러온 데이터 기준으로 다시 그림 */
 function renderStatusOptions(rows){
   const statusSel = document.getElementById("filterStatus");
-  statusSel.innerHTML = `<option value="">전체 제작여부</option>`;
+  statusSel.innerHTML = `<option value="">전체 제작여부</option><option value="미착수">미착수</option>`;
   const statuses = [...new Set(rows.map(r=>r["제작여부"]).filter(Boolean))];
   statuses.forEach(s=>{
     const o=document.createElement("option"); o.value=s; o.textContent=s;
@@ -545,7 +545,7 @@ function applyLocalFilters(){
 
   let rows = ALL_ROWS.filter(r=>{
     const matchQ = !q || (r["제목"]||"").toLowerCase().includes(q);
-    const matchStatus = !status || r["제작여부"] === status;
+    const matchStatus = !status || r["제작여부"] === status || (status === "미착수" && !r["제작여부"]);
     return matchQ && matchStatus;
   });
 
