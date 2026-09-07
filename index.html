@@ -144,23 +144,32 @@
     color:var(--text-dim);
   }
 
+  .dl-group{
+    display:flex;
+    gap:6px;
+  }
   .dl-btn{
     font-size:11px;
     font-weight:600;
-    color:var(--accent);
-    background:rgba(242,224,77,0.1);
-    border:1px solid rgba(242,224,77,0.25);
     padding:4px 9px;
     border-radius:8px;
     white-space:nowrap;
     text-decoration:none;
+    border:1px solid transparent;
   }
-  .dl-btn:hover{ background:rgba(242,224,77,0.2); }
-  .dl-btn.disabled{
-    color:var(--text-dim);
-    background:rgba(255,255,255,0.05);
-    border-color:var(--border);
+  .dl-btn.psd{
+    color:#31A8FF;
+    background:rgba(49,168,255,0.12);
+    border-color:rgba(49,168,255,0.35);
   }
+  .dl-btn.psd:hover{ background:rgba(49,168,255,0.22); }
+
+  .dl-btn.ai{
+    color:#FF9A00;
+    background:rgba(255,154,0,0.12);
+    border-color:rgba(255,154,0,0.35);
+  }
+  .dl-btn.ai:hover{ background:rgba(255,154,0,0.22); }
 
   .thumbs-row{
     display:flex;
@@ -479,7 +488,8 @@ function renderList(rows){
     const imgInsta = normalizeImageUrl(r["썸네일_인스타"]);
     const imgWide  = normalizeImageUrl(r["썸네일_가로"]);
     const imgBlog  = normalizeImageUrl(r["썸네일_블로그"]);
-    const workLink = normalizeDownloadUrl(r["작업파일링크"]);
+    const psdLink = normalizeDownloadUrl(r["PSD파일링크"]);
+    const aiLink  = normalizeDownloadUrl(r["AI파일링크"]);
 
     const thumbHtml = (url, ratioClass, caption, ratioLabel) => `
       <div class="thumb-col">
@@ -497,9 +507,10 @@ function renderList(rows){
     card.innerHTML = `
       <div class="card-top">
         <span class="no">#${r["순번"]||""}</span>
-        ${workLink
-          ? `<a class="dl-btn" href="${workLink}" download rel="noopener">ZIP 다운로드</a>`
-          : `<span class="dl-btn disabled">ZIP 없음</span>`}
+        <div class="dl-group">
+          ${psdLink ? `<a class="dl-btn" href="${psdLink}" download rel="noopener">PSD 다운</a>` : ""}
+          ${aiLink  ? `<a class="dl-btn" href="${aiLink}" download rel="noopener">AI 다운</a>` : ""}
+        </div>
       </div>
       <div class="thumbs-row">
         ${thumbHtml(imgInsta, "r-9x16", "인스타 사이즈", "9:16")}
