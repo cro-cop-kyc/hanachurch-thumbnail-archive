@@ -287,6 +287,38 @@
   }
   .card .links a:hover{ text-decoration:underline; }
 
+  /* ---- link status chips ---- */
+  .card .links .plink{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:8px;
+    text-decoration:none;
+    border:1px solid var(--border);
+    background:rgba(255,255,255,0.05);
+    color:var(--text);
+    white-space:nowrap;
+  }
+  .card .links a.plink:hover{ text-decoration:none; filter:brightness(1.15); }
+  .plink .dot{ width:7px; height:7px; border-radius:50%; background:var(--todo); flex:0 0 auto; }
+  .plink .st{ font-weight:700; }
+  .plink.st-ok   { border-color:rgba(111,207,151,0.45); background:rgba(111,207,151,0.10); }
+  .plink.st-ok .dot{ background:var(--ok); }
+  .plink.st-ok .st{ color:var(--ok); }
+  .plink.st-bad  { border-color:rgba(235,87,87,0.55); background:rgba(235,87,87,0.14); }
+  .plink.st-bad .dot{ background:#eb5757; }
+  .plink.st-bad .st{ color:#ff8a8a; }
+  .plink.st-warn { border-color:rgba(242,201,76,0.5); background:rgba(242,201,76,0.12); }
+  .plink.st-warn .dot{ background:var(--wip); }
+  .plink.st-warn .st{ color:var(--wip); }
+  .plink.st-unk .st, .plink.st-none .st{ color:var(--text-dim); font-weight:600; }
+  .plink.missing{ opacity:0.38; border-style:dashed; cursor:default; }
+  .card .checked-at{ font-size:10.5px; color:var(--text-dim); }
+  .card.has-problem{ border-color:rgba(235,87,87,0.55); }
+  .sum-bad{ color:#ff8a8a; font-weight:700; }
+
   .card .version{
     font-size:10.5px;
     color:var(--text-dim);
@@ -380,6 +412,12 @@
       <option value="생명샘">생명샘</option>
     </select>
     <select id="filterStatus"><option value="">전체 제작여부</option></select>
+    <select id="filterLink">
+      <option value="">전체 링크상태</option>
+      <option value="problem">⚠ 문제 있는 링크</option>
+      <option value="missing">미업로드 플랫폼 있음</option>
+      <option value="unchecked">미점검</option>
+    </select>
   </div>
 </div>
 
@@ -419,6 +457,49 @@ const SHEET_URLS = {
 };
 
 let ALL_ROWS = [];
+
+/* Link status: columns written by the Apps Script checker (linkStatus_v1.x) */
+const PLATFORMS = [
+  { key:"YT",  label:"YouTube",   link:"유튜브링크" },
+  { key:"NTV", label:"Naver",     link:"네이버링크" },
+  { key:"IG",  label:"Instagram", link:"인스타링크" },
+  { key:"FB",  label:"Facebook",  link:"FB_LINK" },
+  { key:"TT",  label:"TikTok",    link:"TT_LINK" }
+];
+const STATUS_META = {
+  OK:      { cls:"st-ok",   text:"정상" },
+  DEAD:    { cls:"st-bad",  text:"삭제" },
+  PRIVATE: { cls:"st-bad",  text:"비공개" },
+  INVALID: { cls:"st-bad",  text:"잘못된 링크" },
+  CHECK:   { cls:"st-warn", text:"확인 필요" },
+  UNKNOWN: { cls:"st-unk",  text:"확인 불가" }
+};
+function statusMeta(code){
+  if(!code) return { cls:"st-none", text:"미점검" };
+  if(STATUS_META[code]) return STATUS_META[code];
+  if(code.indexOf("ERR") === 0) return { cls:"st-warn", text:"오류" };
+  return { cls:"st-unk", text:code };
+}
+function isProblem(code){ return statusMeta(code).cls === "st-bad" || statusMeta(code).cls === "st-warn"; }
+function linkInfo(r){
+  return PLATFORMS.map(p=>({ p, url:(r[p.link]||"").trim(), code:(r[p.key+"_STATUS"]||"").trim() }));
+}
+function rowHasProblem(r){ return linkInfo(r).some(x=>x.url && isProblem(x.code)); }
+function rowHasMissing(r){
+  // FB/TT only count once their link columns exist in the sheet
+  return linkInfo(r).some(x=>!x.url && (x.p.link in r));
+}
+function rowUnchecked(r){ return linkInfo(r).some(x=>x.url) && !(r["CHECKED_AT"]||"").trim(); }
+function renderLinkChips(r){
+  return linkInfo(r).map(x=>{
+    if(!x.url){
+      if(!(x.p.link in r)) return "";   // column not in sheet yet
+      return `<span class="plink missing" title="링크 없음"><span class="dot"></span>${x.p.label}<span class="st">미업로드</span></span>`;
+    }
+    const m = statusMeta(x.code);
+    return `<a class="plink ${m.cls}" href="${x.url}" target="_blank" rel="noopener" title="${x.code||"not checked"}"><span class="dot"></span>${x.p.label}<span class="st">${m.text}</span></a>`;
+  }).join("");
+}
 
 function statusClass(v){
   if(!v) return "todo";
@@ -473,7 +554,8 @@ function renderList(rows){
   const list = document.getElementById("list");
   const countText = document.getElementById("countText");
   list.innerHTML = "";
-  countText.textContent = `총 ${rows.length}개`;
+  const nBad = rows.filter(rowHasProblem).length;
+  countText.innerHTML = `총 ${rows.length}개` + (nBad ? ` · <span class="sum-bad">⚠ 링크 문제 ${nBad}건</span>` : "");
 
   if(rows.length === 0){
     list.innerHTML = `<div class="empty">조건에 맞는 항목이 없습니다.</div>`;
@@ -499,7 +581,7 @@ function renderList(rows){
       </div>`;
 
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "card" + (rowHasProblem(r) ? " has-problem" : "");
     card.innerHTML = `
       <div class="card-top">
         <span class="no">#${r["순번"]||""}</span>
@@ -520,11 +602,8 @@ function renderList(rows){
           <span class="status ${statusClass(r["제작여부"])}">${r["제작여부"]||"미착수"}</span>
         </div>
         <div class="title">${r["제목"]||"(제목 없음)"}</div>
-        <div class="links">
-          ${r["유튜브링크"] ? `<a href="${r["유튜브링크"]}" target="_blank" rel="noopener">YouTube</a>` : ""}
-          ${r["네이버링크"] ? `<a href="${r["네이버링크"]}" target="_blank" rel="noopener">Naver</a>` : ""}
-          ${r["인스타링크"] ? `<a href="${r["인스타링크"]}" target="_blank" rel="noopener">Instagram</a>` : ""}
-        </div>
+        <div class="links">${renderLinkChips(r)}</div>
+        ${r["CHECKED_AT"] ? `<div class="checked-at">링크 점검: ${r["CHECKED_AT"]}</div>` : ""}
         ${r["버전"] ? `<div class="version">버전: ${r["버전"]}</div>` : ""}
         ${r["비고"] ? `<div class="note">${r["비고"].replace(/\n/g,"<br>")}</div>` : ""}
       </div>
@@ -549,11 +628,16 @@ function renderLoading(){
 function applyLocalFilters(){
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
   const status = document.getElementById("filterStatus").value;
+  const linkF = document.getElementById("filterLink").value;
 
   let rows = ALL_ROWS.filter(r=>{
     const matchQ = !q || (r["제목"]||"").toLowerCase().includes(q);
     const matchStatus = !status || r["제작여부"] === status || (status === "미착수" && !r["제작여부"]);
-    return matchQ && matchStatus;
+    const matchLink = !linkF
+      || (linkF === "problem" && rowHasProblem(r))
+      || (linkF === "missing" && rowHasMissing(r))
+      || (linkF === "unchecked" && rowUnchecked(r));
+    return matchQ && matchStatus && matchLink;
   });
 
   rows.sort((a,b)=> (parseInt(b["순번"])||0) - (parseInt(a["순번"])||0));
@@ -596,6 +680,7 @@ function loadForType(type){
 renderPrompt();
 document.getElementById("searchInput").addEventListener("input", applyLocalFilters);
 document.getElementById("filterStatus").addEventListener("change", applyLocalFilters);
+document.getElementById("filterLink").addEventListener("change", applyLocalFilters);
 document.getElementById("filterType").addEventListener("change", (e)=>{
   loadForType(e.target.value);
 });
